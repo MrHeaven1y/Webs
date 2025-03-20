@@ -31,3 +31,12 @@ Check out the live version of the website hosted on GitHub Pages:
    ```bash
    git clone https://github.com/your-username/your-repo.git
    cd your-repo
+
+
+
+
+
+
+![Image](https://github.com/user-attachments/assets/bdcab1b5-8b1c-470a-b622-d6560f869882)
+
+![Image](https://github.com/user-attachments/assets/2c035de4-97f4-4d36-ad13-b7384588fe02)
