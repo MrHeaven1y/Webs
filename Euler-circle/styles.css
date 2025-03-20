@@ -1,0 +1,305 @@
+body,
+html {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #DDDDDD;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+#container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    height: 100vh;
+    max-width: 1200px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+#controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+#controls label {
+    margin-right: 5px;
+    font-weight: bold;
+    display: inline-block;
+    min-width: 70px;
+}
+
+#controls input {
+    margin-right: 5px;
+    width: 100px;
+}
+
+#grid {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 70vh;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+    background-size: calc(100%/40) calc(100%/40);
+    position: relative;
+    overflow: hidden;
+}
+
+.line {
+    position: absolute;
+    background-color: #d40f19;
+    pointer-events: none;
+}
+
+.vertical {
+    width: 1px;
+    height: 100%;
+}
+
+.horizontal {
+    width: 100%;
+    height: 1px;
+}
+
+#circle {
+    width: 200px;
+    height: 200px;
+    border: 5px solid #3498db;
+    border-radius: 50%;
+    opacity: 1;
+    background-color: transparent;
+    transition: width 0.5s, height 0.5s, opacity 0.5s;
+    position: absolute;
+}
+
+#dot {
+    width: 10px;
+    height: 10px;
+    background-color: rgba(255, 0, 0, 0.5);
+    position: absolute;
+    border-radius: 50%;
+    top: 50%;
+    left: 100.6%;
+    transform: translate(-50%, -50%);
+}
+
+.position {
+    position: absolute;
+    font-size: 17px;
+    top: 30%;
+    right: 10%;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.latex-text {
+    font-weight: bold;
+}
+
+#eulerValue,
+#thetaValue {
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.eulerMulti {
+    position: absolute;
+    font-size: medium;
+    font-weight: lighter;
+    top: 5%;
+    right: 5%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 300px;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#tempThetaValue {
+    position: absolute;
+    font-size: 24px;
+    font-weight: bold;
+    top: 5%;
+    left: 5%;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+#rot {
+    border: 1px solid #000;
+    background-color: #11b0ea;
+    margin-top: 10px;
+}
+
+#counter-clockwise {
+    border: 1px solid #000;
+    background-color: #c4c8ca;
+    margin-top: 10px;
+}
+
+.insideFormula {
+    flex-direction: column;
+    display: flex;
+}
+
+.bottom-right-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}
+
+#explanation {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    z-index: 10;
+    width: 80%;
+    max-width: 400px;
+}
+
+/* Responsive styles */
+@media (max-width: 992px) {
+    #container {
+        padding: 5px;
+    }
+    
+    .eulerMulti {
+        width: 250px;
+        font-size: small;
+    }
+}
+
+@media (max-width: 768px) {
+    #container {
+        height: auto;
+    }
+    
+    #grid {
+        height: 60vh;
+    }
+    
+    .eulerMulti {
+        position: absolute;
+        top: auto;
+        bottom: 70px;
+        right: 10px;
+        width: 200px;
+        font-size: x-small;
+    }
+    
+    #tempThetaValue {
+        font-size: 18px;
+        top: 10px;
+        left: 10px;
+    }
+    
+    #pos {
+        font-size: 14px;
+        top: 10px;
+        right: 10px;
+    }
+    
+    #circle {
+        width: 180px !important;
+        height: 180px !important;
+    }
+    
+    #explanation {
+        bottom: 60px;
+        width: 90%;
+        font-size: 14px;
+    }
+    
+    .bottom-right-btn {
+        bottom: 10px;
+        right: 10px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 576px) {
+    #controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    #controls label, #controls input {
+        width: 100%;
+        text-align: center;
+    }
+    
+    #grid {
+        height: 50vh;
+    }
+    
+    .eulerMulti {
+        width: 150px;
+        font-size: xx-small;
+        bottom: 60px;
+    }
+    
+    #tempThetaValue {
+        font-size: 14px;
+    }
+    
+    #circle {
+        width: 150px !important;
+        height: 150px !important;
+    }
+    
+    #rot, #counter-clockwise {
+        font-size: 12px;
+        padding: 8px !important;
+    }
+    
+    #theta {
+        width: 100%;
+    }
+}
+
+/* For very small screens */
+@media (max-width: 360px) {
+    #grid {
+        height: 40vh;
+    }
+    
+    #circle {
+        width: 120px !important;
+        height: 120px !important;
+    }
+    
+    .eulerMulti {
+        width: 120px;
+        bottom: 50px;
+    }
+    
+    #dot {
+        width: 6px;
+        height: 6px;
+    }
+}
