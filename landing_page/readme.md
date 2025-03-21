@@ -5,7 +5,7 @@ Welcome to the **Heavenly Fitness Gym Landing Page**! This is a responsive and m
 ## Live Demo
 
 Check out the live version of the website hosted on GitHub Pages:  
-👉 [Heavenly Fitness Gym Landing Page] (https://mrheaven1y.github.io/Webs/)
+👉 [Heavenly Fitness Gym Landing Page] (https://heavenlypages.github.io/landing-page/)
 
 ## Features
 
@@ -29,8 +29,8 @@ Check out the live version of the website hosted on GitHub Pages:
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/your-repo.git
-   cd your-repo
+   git clone https://github.com/MrHeaven1y/Webs.git
+   cd Webs
 
 
 
