@@ -80,7 +80,7 @@ nav {
 .section3{
     height: 100%;
     width: 100%;
-    background-image: url("../images/gym_interior.jpg");
+    background-image: url("./images/gym_interior.jpg");
     background-size: cover;
     background-position: center;
     background-attachment: scroll;
@@ -123,7 +123,7 @@ nav {
 }
 
 .section4{
-    background-image: url('../images/banner.jpg');
+    background-image: url('./images/banner.jpg');
     background-attachment: fixed;
     background-repeat: no-repeat;
     
