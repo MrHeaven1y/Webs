@@ -16,7 +16,7 @@ model = None
 def load_model():
     global model
     try:
-        model = tf.keras.models.load_model('../artifacts/inception_model.keras', custom_objects={'InceptionBlock': InceptionBlock})
+        model = tf.keras.models.load_model(r'C:\Users\Heavenly\Desktop\Git\Webs\digit classififer\artifacts\inception_model.keras', custom_objects={'InceptionBlock': InceptionBlock})
         print("Model loaded successfully!")
         model.build((None,28,28,1))
         print("Model is being Build!")
@@ -82,6 +82,6 @@ def serve_static(filename):
 if __name__ == '__main__':
     load_model()
     
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 3000))
     
     app.run(host='0.0.0.0', port=port)
