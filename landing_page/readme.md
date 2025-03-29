@@ -34,8 +34,9 @@ Check out the live version of the website hosted on GitHub Pages:
 
 
 
+### Previews:
 
-
+![Image](https://github.com/user-attachments/assets/af5cf419-b6ae-4fc0-b59a-5a87df803b74)
 
 ![Image](https://github.com/user-attachments/assets/bdcab1b5-8b1c-470a-b622-d6560f869882)
 
