@@ -1,6 +1,6 @@
 flask
 numpy
-tensorflow
+tensorflow-cpu
 flask_cors
 pillow
 gunicorn
