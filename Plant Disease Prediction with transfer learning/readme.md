@@ -128,3 +128,7 @@ The dataset used in this project is the ["New Plant Diseases Dataset"](https://w
 ***
 
 ### preview:
+
+![Image](https://github.com/user-attachments/assets/fa6a71ff-31a7-4dfd-8233-c55021a78ba5)
+![Image](https://github.com/user-attachments/assets/8b8c2a3b-6f8b-466f-a272-d313a51777db)
+![Image](https://github.com/user-attachments/assets/80801573-88ae-408c-9544-f1e9cbbda473)

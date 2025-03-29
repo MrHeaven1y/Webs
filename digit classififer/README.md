@@ -129,3 +129,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - The MNIST dataset creators
 - TensorFlow and Keras teams
 - Flask framework
+
+
+### Previews:
+![Image](https://github.com/user-attachments/assets/15a1e10e-3c61-4410-8759-a5d8a30a01b7)
+![Image](https://github.com/user-attachments/assets/71983ce8-49f5-4fa6-9052-fc64db261c50)
+
+
