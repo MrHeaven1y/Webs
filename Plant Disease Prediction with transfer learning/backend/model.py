@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import json
+import os
 
 class TensorFlowImageClassifier:
     def __init__(self, model_path, label_path=None):
@@ -61,3 +62,10 @@ class TensorFlowImageClassifier:
             
         return class_id, probabilities
 
+
+if __name__=='__main__':
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    MODEL_PATH = os.path.join(BASE_DIR, 'artifacts', 'VGG_net_kaggle.keras')
+    LABELS_PATH = os.path.join(BASE_DIR, 'artifacts', 'labels.json')
+
+    classifier = TensorFlowImageClassifier(MODEL_PATH, LABELS_PATH)

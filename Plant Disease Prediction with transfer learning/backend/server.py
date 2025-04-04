@@ -12,8 +12,9 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 app = Flask(__name__, static_folder='../frontend', template_folder='../frontend')
 CORS(app)
 # Configuration - using absolute paths
-MODEL_PATH = os.path.join(os.path.dirname(__file__), 'artifacts', 'VGG_net_kaggle.keras')
-LABELS_PATH = os.path.join(os.path.dirname(__file__), 'artifacts', 'labels.json')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, 'artifacts', 'VGG_net_kaggle.keras')
+LABELS_PATH = os.path.join(BASE_DIR, 'artifacts', 'labels.json')
 
 # Initialize classifier
 try:
