@@ -5,7 +5,7 @@ from PIL import Image
 import io
 
 
-def preprocess_image(image_data, target_size=(224, 224)):
+def preprocess_image(image_data, target_size=(256, 256)):
     """
     Properly handles both file objects and bytes
     """

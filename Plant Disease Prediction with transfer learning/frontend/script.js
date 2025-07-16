@@ -105,8 +105,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('image', selectedFile);
             formData.append('enhance', String(enhanceCheckbox.checked));
-            
-            // Make the request
+            const userLabel = document.getElementById('label-input').value;
+            if (userLabel.trim() !== '') {
+                formData.append('label', userLabel.trim());
+            }
+                      
             const response = await fetch('http://localhost:5000/api/classify', {
                 method: 'POST',
                 body: formData

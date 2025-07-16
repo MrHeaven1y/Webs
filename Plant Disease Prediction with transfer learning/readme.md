@@ -1,134 +1,155 @@
-# Plant Disease Classification
+# 🌿 Plant Disease Classifier with SE Block + Incremental Learning
 
-## Overview
+This is a full-stack deep learning web app that predicts **plant diseases** from leaf images using a custom-built **CNN with SE (Squeeze-and-Excitation) Blocks**.  
+When it encounters **low-confidence predictions**, it **auto-collects** the data and **re-trains itself** using **incremental learning**.
 
-This project implements a deep learning-based plant disease classification system using transfer learning with the VGG16 architecture. The model is trained to identify 38 different classes of plant diseases across various crops, providing a tool for early detection and diagnosis of plant diseases.
+---
 
-## Dataset
+## 🚀 Key Features
 
-The project uses the "New Plant Diseases Dataset" from Kaggle, which contains over 87,000 RGB images of healthy and diseased plant leaves, categorized into 38 different classes. The dataset includes:
+✅ CNN model with **SE Block** — boosts feature learning using **channel-wise attention**  
+✅ Real-time plant disease classification via web interface  
+✅ Stores **low-confidence predictions** for manual labeling  
+✅ Automatic **model update** when enough new samples are collected  
+✅ Uses buffered old data to prevent catastrophic forgetting  
+✅ Modular design with TensorFlow and Flask
 
-- Training set: 70,295 images
-- Validation set: 17,572 images
-- Test set: Various plant disease images for testing
+---
 
-## Model Architecture
+## 🧠 Why SE Block?
 
-The classification model uses transfer learning with the following architecture:
+SE Blocks apply **dynamic channel-wise attention** to CNN outputs.  
+This lets the model **focus on "what" features are important** for different plant diseases.
 
-- Base model: Pre-trained VGG16 (without top layers)
-- Custom classification head:
-    - Flatten layer
-    - Dense layer with 256 units and ReLU activation
-    - Dropout layer (0.5)
-    - Output layer with softmax activation (38 classes)
+🔬 Instead of blindly extracting all features, SE Block:
 
-## Implementation Details
+- **Squeezes** global spatial info into channel descriptors (via GAP)
+    
+- **Excites** channels using an MLP to **weigh feature maps adaptively**
+    
 
-- **Framework**: TensorFlow/Keras
-- **Image Size**: 224×224 pixels (VGG16 input size)
-- **Data Augmentation**:
-    - Rotation
-    - Width/height shifts
-    - Shear transformation
-    - Zoom
-    - Horizontal flips
-- **Training**:
-    - Optimizer: Adam (learning rate: 1e-4)
-    - Loss function: Categorical crossentropy
-    - Batch size: 32
-    - Epochs: 10
+✅ Improved robustness  
+✅ Lighter than Transformers  
+✅ Ideal for fine-grained tasks like leaf disease detection
 
-## Performance
-
-The model achieved approximately 90.7% validation accuracy after 10 epochs of training, demonstrating its effectiveness in classifying plant diseases from leaf images.
-
-## Disease Classes
-
-The model can identify the following plant diseases and healthy plants:
-
-1. Potato - Healthy
-2. Raspberry - Healthy
-3. Soybean - Healthy
-4. Potato - Late Blight
-5. Strawberry - Leaf Scorch
-6. Apple - Cedar Apple Rust
-7. Potato - Early Blight
-8. Tomato - Leaf Mold
-9. Cherry - Powdery Mildew
-10. Peach - Bacterial Spot
-11. Tomato - Mosaic Virus
-12. Cherry - Healthy
-13. Peach - Healthy
-14. Tomato - Spider Mites
-15. Apple - Black Rot
-16. Corn - Common Rust
-17. Apple - Scab
-18. Corn - Healthy
-19. Squash - Powdery Mildew
-20. Grape - Leaf Blight
-21. Corn - Northern Leaf Blight
-22. Tomato - Septoria Leaf Spot
-23. Grape - Healthy
-24. Bell Pepper - Bacterial Spot
-25. Corn - Gray Leaf Spot
-26. Grape - Black Rot
-27. Blueberry - Healthy
-28. Tomato - Yellow Leaf Curl Virus
-29. Tomato - Bacterial Spot
-30. Tomato - Healthy
-31. Tomato - Early Blight
-32. Apple - Healthy
-33. Tomato - Target Spot
-34. Grape - Black Measles
-35. Strawberry - Healthy
-36. Orange - Citrus Greening
-37. Tomato - Late Blight
-38. Bell Pepper - Healthy
-
-## Usage
-
-To use the model for prediction:
-
-```python
-def predict_image(img_path, model):
-    # Load and preprocess image
-    img = image.load_img(img_path, target_size=(224, 224))
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = img_array / 255.0  # Normalize
-
-    # Predict
-    predictions = model.predict(img_array)
-    predicted_class = np.argmax(predictions)
-    confidence = np.max(predictions)
-
-    return predicted_class, confidence
 ```
+.
+├── backend/
+│   ├── server.py                # Flask API server
+│   ├── model.py                 # Model with SE blocks (TensorFlow)
+│   ├── preprocessing.py         # Image enhancement utilities
+│   ├── increment_learning.py    # Incremental training pipeline
+│   └── artifacts/
+│       ├── plant_disease_model.keras
+│       └── labels.json
+│
+├── frontend/                    # Static files for the UI
+├── Dataset/
+│   ├── old_datapoints/
+│   │   ├── train/
+│   │   └── val/
+│   └── new_datapoints/         # Saved low-confidence images
 
-## Requirements
+```
+## 🔁 Incremental Learning Logic
 
-- TensorFlow 2.x
-- Keras
-- NumPy
-- Matplotlib (for visualization)
-- KaggleHub (for dataset access)
+1. Each image is classified through the CNN + SE model
+    
+2. If confidence `< 0.5`, it:
+    
+    - Stores the image in `new_datapoints/`
+        
+    - Accepts **optional user label**
+        
+3. When `≥ 150` new samples collected:
+    
+    - Builds a **hybrid dataset** using new + old buffer
+        
+    - Re-trains final Dense layers (with updated class count)
+        
+    - Saves updated `.keras` model and `labels.json`
+        
 
-## Future Improvements
+---
 
-- Fine-tuning the base model layers
-- Testing with more recent architectures (EfficientNet, ResNet)
-- Implementing explainability techniques (Grad-CAM)
-- Creating a web or mobile application interface
+## 🧪 Model Training Pipeline
 
-## Acknowledgements
+- CNN backbone + SE Block
+    
+- Last Dense layer updated on new class count
+    
+- One-hot categorical loss with smoothing
+    
+- Uses `tf.data.Dataset` pipelines with shuffle + prefetch
+    
+- Separate training and validation steps calculated dynamically
+    
 
-The dataset used in this project is the ["New Plant Diseases Dataset"](https://www.kaggle.com/datasets/vipoooool/new-plant-diseases-dataset) from Kaggle, created by Vipool Jolly.
+---
 
-***
+## 🧾 API
 
-### preview:
+### POST `/api/classify`
 
-![Image](https://github.com/user-attachments/assets/fa6a71ff-31a7-4dfd-8233-c55021a78ba5)
-![Image](https://github.com/user-attachments/assets/8b8c2a3b-6f8b-466f-a272-d313a51777db)
-![Image](https://github.com/user-attachments/assets/80801573-88ae-408c-9544-f1e9cbbda473)
+**Form-Data:**
+
+- `image`: Leaf image
+    
+- `label`: Optional user label (string)
+    
+- `enhance`: Optional preprocessing (`true` or `false`)
+    
+
+**Returns:**
+```
+{
+  "class_name": "Tomato___Leaf_Spot",
+  "confidence": 0.64,
+  "top_predictions": [
+    {"class": "Tomato___Leaf_Spot", "probability": 0.64},
+    {"class": "Tomato___Septoria", "probability": 0.12},
+    ...
+  ]
+}
+
+```
+⚙️ Setup
+
+### 1. Install Requirements
+
+`pip install -r requirements.txt`
+
+### 2. Start the Flask Server
+
+`python backend/server.py`
+
+### 3. Access the Web Interface
+
+`http://localhost:5000`
+
+## 🧾 Model Details
+
+- **Architecture:** Custom CNN with SE Block
+    
+- **Framework:** TensorFlow 2.x
+    
+- **Optimizer:** AdamW
+    
+- **Loss:** Categorical Crossentropy (Label Smoothing = 0.1)
+    
+- **Input Size:** 256×256×3
+    
+- **Output:** Softmax over dynamic class count
+    
+
+---
+
+## ✅ To-Do / Future Ideas
+
+-  Add UI to label `unlabeled` images in `new_datapoints`
+    
+-  Use Grad-CAM or saliency for visual explanation
+    
+-  Export model to TFLite for mobile support
+    
+-  Add history/plotting endpoint for visualizing training

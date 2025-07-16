@@ -3,6 +3,28 @@ import numpy as np
 import json
 import os
 
+class SEBlock(tf.keras.layers.Layer):
+    def __init__(self,channels,reduction=16,**kwargs):
+        super(SEBlock,self).__init__(**kwargs)
+        self.channels = channels
+        self.reduction = reduction
+
+    def build(self,input_shape):
+        self.global_pool = tf.keras.layers.GlobalAveragePooling2D()
+        self.fc1 = tf.keras.layers.Dense(self.channels//self.reduction,activation='relu')
+        self.fc2 = tf.keras.layers.Dense(self.channels,activation='sigmoid')
+        self.reshape = tf.keras.layers.Reshape((1,1,self.channels))
+        super(SEBlock,self).build(input_shape)
+
+    def call(self,inputs):
+        x = self.global_pool(inputs)
+        x = self.fc1(x)
+        x = self.fc2(x)
+        x = self.reshape(x)
+        return tf.keras.layers.Multiply()([inputs,x])
+
+
+
 class TensorFlowImageClassifier:
     def __init__(self, model_path, label_path=None):
         
@@ -20,11 +42,8 @@ class TensorFlowImageClassifier:
     def _load_model(model_path):
         try:
             # Try loading as Keras model first
-            return tf.keras.models.load_model(model_path)
-        except:
-            try:
-                return tf.saved_model.load(model_path)
-            except Exception as e:
+            return tf.keras.models.load_model(model_path,custom_objects={'SEBlock': SEBlock},compile=False)
+        except Exception as e:
                 print(f"Model loading failed: {str(e)}")
                 raise
 
@@ -33,6 +52,40 @@ class TensorFlowImageClassifier:
         with open(path,'r') as f:
             labels = json.load(f)
         return labels
+    
+    @staticmethod
+    def return_optimizer():
+        optimizer = tf.keras.optimizers.Adam(
+            learning_rate=5e-5,
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-7,
+            amsgrad=False
+        )
+        return optimizer
+
+    @staticmethod
+    def get_num_parallel_calls():
+        return tf.data.AUTOTUNE
+    
+
+    @staticmethod
+    def get_callbacks():
+ 
+        lr_scheduler = tf.keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss', factor=0.5, patience=4, verbose=1, min_lr=1e-10
+        )
+ 
+        early_stopping = tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss',          # Watch validation loss
+            patience=5,                  # Stop after 5 epochs with no improvement
+            min_delta=1e-4,              # Minimum change to qualify as an improvement
+            restore_best_weights=True,  # Roll back to the best weights
+            mode='min',                 # We want to minimize val_loss
+            verbose=1
+        )
+            
+        return [lr_scheduler,early_stopping]
 
     def predict(self, img_array):
         
