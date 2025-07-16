@@ -1,3 +1,10 @@
+![Image](https://github.com/user-attachments/assets/7355d3f8-dc54-4e33-a53a-9fe1a59f0abb)
+
+<img width="633" height="466" alt="Image" src="https://github.com/user-attachments/assets/02935ce1-3fcd-49c8-92bb-8e79f2d22924" />
+<img width="643" height="643" alt="Image" src="https://github.com/user-attachments/assets/b90fb5b9-b0e9-4be5-99ae-599c797f2ad2" />
+
+
+
 # 🌿 Plant Disease Classifier with SE Block + Incremental Learning
 
 This is a full-stack deep learning web app that predicts **plant diseases** from leaf images using a custom-built **CNN with SE (Squeeze-and-Excitation) Blocks**.  
