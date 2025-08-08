@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+}
+
+/****************************
+  Obsidian-like dark theme tweaks
+*****************************/
+.prose {
+  color: inherit;
+}
+.prose a {
+  color: #5c9cf5;
+}
+.prose pre {
+  background: #252526;
+}
