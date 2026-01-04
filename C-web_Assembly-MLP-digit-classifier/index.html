@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>C Autograd in Browser</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            background: #1e1e1e; 
+            color: #fff; 
+            margin: 0;
+            padding-top: 40px;
+        }
+        h1 { margin-bottom: 10px; font-weight: 300; }
+        
+        #canvas-container { 
+            position: relative; 
+            margin: 20px; 
+            border: 4px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        canvas { 
+            background: black; 
+            cursor: crosshair; 
+            display: block;
+        }
+        
+        #controls { margin-bottom: 20px; display: flex; gap: 10px; }
+        button { 
+            padding: 10px 24px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            background: #007acc; 
+            color: white; 
+            border: none; 
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0062a3; }
+        button.secondary { background: #444; }
+        button.secondary:hover { background: #555; }
+
+        #prediction { 
+            font-size: 28px; 
+            font-weight: bold; 
+            color: #4caf50; 
+            min-height: 40px; 
+            margin-top: 10px;
+        }
+        
+        #bars { display: flex; gap: 8px; height: 120px; align-items: flex-end; margin-top: 30px;}
+        .bar-container { display: flex; flex-direction: column; align-items: center; width: 30px; }
+        .bar { width: 100%; background: #444; transition: height 0.2s, background 0.2s; border-radius: 3px 3px 0 0; }
+        .label { margin-top: 8px; font-size: 14px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+    <h1>Digit Classifier (C + WebAssembly)</h1>
+    
+    <div id="controls">
+        <button class="secondary" onclick="clearCanvas()">Clear</button>
+        <button onclick="predict()">Predict</button>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="mainCanvas" width="280" height="280"></canvas>
+    </div>
+
+    <div id="prediction">Draw a digit...</div>
+
+    <div id="bars"></div>
+
+    <script src="index.js"></script>
+    <script>
+    // Register the Service Worker for offline support
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then(() => console.log('Service Worker Registered (App is now Offline-Ready)'))
+            .catch((err) => console.error('Service Worker Failed:', err));
+    }
+    </script>
+    <script>
+        let isDrawing = false;
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Setup drawing style
+        ctx.lineWidth = 20;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = 'white';
+
+        // Mouse Events
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        canvas.addEventListener('mouseup', () => { isDrawing = false; predict(); }); // Auto-predict on lift
+        canvas.addEventListener('mouseleave', () => { isDrawing = false; });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        // Initialize Probability Bars
+        const barsContainer = document.getElementById('bars');
+        const barEls = [];
+        for(let i=0; i<10; i++) {
+            let div = document.createElement('div');
+            div.className = 'bar-container';
+            div.innerHTML = `<div class="bar" style="height: 0px;" id="bar-${i}"></div><span class="label">${i}</span>`;
+            barsContainer.appendChild(div);
+            barEls.push(document.getElementById(`bar-${i}`));
+        }
+
+        // WASM Integration
+        Module.onRuntimeInitialized = function() {
+            console.log("WASM Loaded");
+            Module._init_system(); // Call C initialization
+        };
+
+        function clearCanvas() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, 280, 280);
+            ctx.beginPath();
+            document.getElementById('prediction').innerText = "Draw a digit...";
+            barEls.forEach(b => { b.style.height = '0px'; b.style.background = '#444'; });
+        }
+
+        function predict() {
+            // 1. Resize 280x280 -> 28x28
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 28;
+            tempCanvas.height = 28;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0, 28, 28);
+            
+            // 2. Get Pixel Data
+            const imgData = tempCtx.getImageData(0, 0, 28, 28);
+            const pixels = imgData.data; // RGBA array
+            
+            // 3. Allocate memory in C heap for input
+            const inputPtr = Module._malloc(784 * 8); // 784 doubles * 8 bytes
+            
+            // 4. Copy JS pixels to C memory (Normalize 0-255 -> 0.0-1.0)
+            for (let i = 0; i < 784; i++) {
+                const val = pixels[i * 4] / 255.0; // Red channel
+                Module.setValue(inputPtr + i * 8, val, 'double');
+            }
+
+            // 5. Call C Function
+            const outputPtr = Module._predict(inputPtr);
+
+            // 6. Read Results back from C
+            let maxVal = -1;
+            let maxIdx = 0;
+            for (let i = 0; i < 10; i++) {
+                const prob = Module.getValue(outputPtr + i * 8, 'double');
+                
+                // Update UI Bars (Max height 100px)
+                const height = Math.floor(prob * 100);
+                barEls[i].style.height = height + 'px';
+                
+                if (prob > maxVal) { maxVal = prob; maxIdx = i; }
+            }
+
+            // Highlight winner
+            barEls.forEach(b => b.style.background = '#444');
+            barEls[maxIdx].style.background = '#4caf50'; // Green
+            document.getElementById('prediction').innerText = `Prediction: ${maxIdx} (${(maxVal*100).toFixed(1)}%)`;
+
+            // 7. Free C memory
+            Module._free(inputPtr);
+        }
+        
+        // Init canvas to black
+        clearCanvas();
+    </script>
+</body>
+</html>

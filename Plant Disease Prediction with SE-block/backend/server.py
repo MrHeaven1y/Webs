@@ -84,69 +84,69 @@ def classify_image():
             ]
         }
 
-        if response_data['confidence'] < 0.5:
-            user_label = request.form.get('label', '').strip()
-            label_folder = user_label if user_label else 'unlabeled'
-            label_folder = "".join(c for c in label_folder if c.isalnum() or c in (' ', '_', '-'))
-            label_path = os.path.join(NEW_DATASET_DIR, label_folder)
-            os.makedirs(label_path, exist_ok=True)
-            ext = image_file.filename.rsplit('.', 1)[1].lower()
-            unique_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{ext}"
-            save_path = os.path.join(label_path, unique_name)
-            image_file.seek(0)
-            image_file.save(save_path)
-            print(f"[!] Low-confidence image saved to: {save_path}")
+        # if response_data['confidence'] < 0.5:
+        #     user_label = request.form.get('label', '').strip()
+        #     label_folder = user_label if user_label else 'unlabeled'
+        #     label_folder = "".join(c for c in label_folder if c.isalnum() or c in (' ', '_', '-'))
+        #     label_path = os.path.join(NEW_DATASET_DIR, label_folder)
+        #     os.makedirs(label_path, exist_ok=True)
+        #     ext = image_file.filename.rsplit('.', 1)[1].lower()
+        #     unique_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{ext}"
+        #     save_path = os.path.join(label_path, unique_name)
+        #     image_file.seek(0)
+        #     image_file.save(save_path)
+        #     print(f"[!] Low-confidence image saved to: {save_path}")
 
-        if Check(NEW_DATASET_DIR, prev_num_classes=len(classifier.labels)).is_suff():
-            buffer_data_ref = [
-                os.path.join(BASE_DIR, "Dataset", "old_datapoints", "train"),
-                os.path.join(BASE_DIR, "Dataset", "old_datapoints", "val")
-            ]
+        # if Check(NEW_DATASET_DIR, prev_num_classes=len(classifier.labels)).is_suff():
+        #     buffer_data_ref = [
+        #         os.path.join(BASE_DIR, "Dataset", "old_datapoints", "train"),
+        #         os.path.join(BASE_DIR, "Dataset", "old_datapoints", "val")
+        #     ]
 
-            incModel = IncrementTrain(
-                dir_path=NEW_DATASET_DIR,
-                model=classifier.model,
-                batch_size=32,
-                image_size=(256, 256),
-                prev_labels=classifier.labels,
-                repeat=1,
-                buffer_data_ref=buffer_data_ref,
-                num_parallel_calls=TensorFlowImageClassifier.get_num_parallel_calls(),
-                shuffle=True,
-                shuffle_buffer=100,
-                split_size=0.8
-            )
+        #     incModel = IncrementTrain(
+        #         dir_path=NEW_DATASET_DIR,
+        #         model=classifier.model,
+        #         batch_size=32,
+        #         image_size=(256, 256),
+        #         prev_labels=classifier.labels,
+        #         repeat=1,
+        #         buffer_data_ref=buffer_data_ref,
+        #         num_parallel_calls=TensorFlowImageClassifier.get_num_parallel_calls(),
+        #         shuffle=True,
+        #         shuffle_buffer=100,
+        #         split_size=0.8
+        #     )
 
-            train_ds, val_ds, steps_per_epoch, validation_steps = incModel.createDataset(
-                imageList=incModel.imageList,
-                buffer_data_ref=buffer_data_ref,
-                split_size=0.8
-            )
+        #     train_ds, val_ds, steps_per_epoch, validation_steps = incModel.createDataset(
+        #         imageList=incModel.imageList,
+        #         buffer_data_ref=buffer_data_ref,
+        #         split_size=0.8
+        #     )
 
-            version = datetime.now().strftime("%Y%m%d_%H%M%S")
-            model_file = f"plant_disease_model_{version}.keras"
+        #     version = datetime.now().strftime("%Y%m%d_%H%M%S")
+        #     model_file = f"plant_disease_model_{version}.keras"
            
 
 
-            incModel.train(
-                model=classifier.model,
-                train_ds=train_ds,
-                val_ds=val_ds,
-                steps_per_epoch=steps_per_epoch,
-                validation_steps=validation_steps,
-                epochs=5,
-                optimizer=TensorFlowImageClassifier.return_optimizer(),
-                output_dir=ARTIFACTS_DIR,
-                version=model_file.replace(".keras", ""),
-                metrics=['accuracy'],
-                callbacks=TensorFlowImageClassifier.get_callbacks()
-            )
+        #     incModel.train(
+        #         model=classifier.model,
+        #         train_ds=train_ds,
+        #         val_ds=val_ds,
+        #         steps_per_epoch=steps_per_epoch,
+        #         validation_steps=validation_steps,
+        #         epochs=5,
+        #         optimizer=TensorFlowImageClassifier.return_optimizer(),
+        #         output_dir=ARTIFACTS_DIR,
+        #         version=model_file.replace(".keras", ""),
+        #         metrics=['accuracy'],
+        #         callbacks=TensorFlowImageClassifier.get_callbacks()
+        #     )
 
 
-            classifier = TensorFlowImageClassifier(
-                model_path=incModel.updated_model_path,
-                label_path=LABELS_PATH
-            )
+        #     classifier = TensorFlowImageClassifier(
+        #         model_path=incModel.updated_model_path,
+        #         label_path=LABELS_PATH
+        #     )
 
 
         print(f"Classification result: {response_data['class_name']} ({response_data['confidence']:.2%})")
