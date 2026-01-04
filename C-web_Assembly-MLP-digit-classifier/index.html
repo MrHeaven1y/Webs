@@ -110,6 +110,38 @@
             ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
         });
 
+        // --- ADD TOUCH SUPPORT FOR MOBILE ---
+        
+        // Stop scrolling when touching the canvas
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Stop scrolling
+            isDrawing = true;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isDrawing = false;
+            predict(); // Predict when you lift your finger
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDrawing) return;
+            e.preventDefault(); // Stop scrolling
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            
+            ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+            ctx.stroke();
+            
+            // Smoother drawing for touch: update start point
+            ctx.beginPath();
+            ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+        }, { passive: false });
+        
         // Initialize Probability Bars
         const barsContainer = document.getElementById('bars');
         const barEls = [];
