@@ -13,9 +13,12 @@
             background: #1e1e1e; 
             color: #fff; 
             margin: 0;
-            padding-top: 40px;
+            padding-top: 20px;
+            /* PREVENT SCROLL BOUNCE ON MOBILE */
+            overscroll-behavior: none;
+            touch-action: none;
         }
-        h1 { margin-bottom: 10px; font-weight: 300; }
+        h1 { margin-bottom: 10px; font-weight: 300; font-size: 1.5rem; text-align: center;}
         
         #canvas-container { 
             position: relative; 
@@ -24,16 +27,26 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            /* CRITICAL FOR MOBILE: Fixes layout shifts */
+            display: inline-block;
         }
+        
         canvas { 
             background: black; 
             cursor: crosshair; 
             display: block;
+            /* CRITICAL FOR MOBILE: Disables browser gestures on the canvas */
+            touch-action: none; 
+            user-select: none;
+            -webkit-user-select: none;
+            /* Responsive width */
+            max-width: 90vw; 
+            height: auto;
         }
         
         #controls { margin-bottom: 20px; display: flex; gap: 10px; }
         button { 
-            padding: 10px 24px; 
+            padding: 12px 24px; /* Larger tap targets */
             font-size: 16px; 
             cursor: pointer; 
             background: #007acc; 
@@ -41,6 +54,7 @@
             border: none; 
             border-radius: 4px;
             transition: background 0.2s;
+            touch-action: manipulation; /* Improves tap response */
         }
         button:hover { background: #0062a3; }
         button.secondary { background: #444; }
@@ -54,15 +68,15 @@
             margin-top: 10px;
         }
         
-        #bars { display: flex; gap: 8px; height: 120px; align-items: flex-end; margin-top: 30px;}
-        .bar-container { display: flex; flex-direction: column; align-items: center; width: 30px; }
+        #bars { display: flex; gap: 8px; height: 120px; align-items: flex-end; margin-top: 20px; padding-bottom: 20px;}
+        .bar-container { display: flex; flex-direction: column; align-items: center; width: 25px; }
         .bar { width: 100%; background: #444; transition: height 0.2s, background 0.2s; border-radius: 3px 3px 0 0; }
-        .label { margin-top: 8px; font-size: 14px; color: #aaa; }
+        .label { margin-top: 8px; font-size: 12px; color: #aaa; }
     </style>
 </head>
 <body>
 
-    <h1>Digit Classifier (C + WebAssembly)</h1>
+    <h1>Digit Classifier (C + WASM)</h1>
     
     <div id="controls">
         <button class="secondary" onclick="clearCanvas()">Clear</button>
@@ -79,70 +93,89 @@
 
     <script src="index.js"></script>
     <script>
-    // Register the Service Worker for offline support
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log('Service Worker Registered (App is now Offline-Ready)'))
-            .catch((err) => console.error('Service Worker Failed:', err));
+            .then(() => console.log('SW Registered'))
+            .catch((err) => console.error('SW Failed:', err));
     }
     </script>
     <script>
-        let isDrawing = false;
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
         
+        // Drawing State
+        let isDrawing = false;
+
         // Setup drawing style
         ctx.lineWidth = 20;
         ctx.lineCap = 'round';
         ctx.strokeStyle = 'white';
 
-        // Mouse Events
-        canvas.addEventListener('mousedown', () => isDrawing = true);
-        canvas.addEventListener('mouseup', () => { isDrawing = false; predict(); }); // Auto-predict on lift
-        canvas.addEventListener('mouseleave', () => { isDrawing = false; });
-        
-        canvas.addEventListener('mousemove', (e) => {
-            if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-        });
+        // --- UNIFIED INPUT HANDLING (MOUSE & TOUCH) ---
 
-        // --- ADD TOUCH SUPPORT FOR MOBILE ---
-        
-        // Stop scrolling when touching the canvas
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Stop scrolling
+        function getPos(e) {
+            // Check if touch or mouse
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const rect = canvas.getBoundingClientRect();
+            
+            // SCALE COORDINATES (Vital for mobile scaling)
+            // If CSS shows canvas as 200px but internal width is 280px, 
+            // we need to multiply by (280/200) = 1.4
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function startPosition(e) {
+            e.preventDefault(); // Stop scrolling/selecting
             isDrawing = true;
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            ctx.beginPath();
-            ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-        }, { passive: false });
+            draw(e); // Draw a dot immediately on tap
+        }
 
-        canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            isDrawing = false;
-            predict(); // Predict when you lift your finger
-        }, { passive: false });
+        function finishedPosition() {
+            if(isDrawing) {
+                isDrawing = false;
+                ctx.beginPath(); // Reset path so next line doesn't connect
+                predict(); // Auto-predict on lift
+            }
+        }
 
-        canvas.addEventListener('touchmove', (e) => {
+        function draw(e) {
             if (!isDrawing) return;
-            e.preventDefault(); // Stop scrolling
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
+            e.preventDefault(); // Stop scrolling while dragging
             
-            ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+            const pos = getPos(e);
+
+            ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
             
-            // Smoother drawing for touch: update start point
+            // For smoother lines:
             ctx.beginPath();
-            ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-        }, { passive: false });
-        
-        // Initialize Probability Bars
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // Mouse
+        canvas.addEventListener('mousedown', startPosition);
+        canvas.addEventListener('mouseup', finishedPosition);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseleave', () => isDrawing = false);
+
+        // Touch (Passive: false is required to use preventDefault)
+        canvas.addEventListener('touchstart', startPosition, { passive: false });
+        canvas.addEventListener('touchend', finishedPosition, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+
+
+        // --- UI & WASM LOGIC REMAIN UNCHANGED BELOW ---
+
         const barsContainer = document.getElementById('bars');
         const barEls = [];
         for(let i=0; i<10; i++) {
@@ -153,67 +186,56 @@
             barEls.push(document.getElementById(`bar-${i}`));
         }
 
-        // WASM Integration
         Module.onRuntimeInitialized = function() {
             console.log("WASM Loaded");
-            Module._init_system(); // Call C initialization
+            Module._init_system(); 
         };
 
         function clearCanvas() {
             ctx.fillStyle = "black";
-            ctx.fillRect(0, 0, 280, 280);
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.beginPath();
             document.getElementById('prediction').innerText = "Draw a digit...";
             barEls.forEach(b => { b.style.height = '0px'; b.style.background = '#444'; });
         }
 
         function predict() {
-            // 1. Resize 280x280 -> 28x28
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = 28;
             tempCanvas.height = 28;
             const tempCtx = tempCanvas.getContext('2d');
+            
+            // Use current canvas dimensions safely
             tempCtx.drawImage(canvas, 0, 0, 28, 28);
             
-            // 2. Get Pixel Data
             const imgData = tempCtx.getImageData(0, 0, 28, 28);
-            const pixels = imgData.data; // RGBA array
+            const pixels = imgData.data; 
             
-            // 3. Allocate memory in C heap for input
-            const inputPtr = Module._malloc(784 * 8); // 784 doubles * 8 bytes
+            const inputPtr = Module._malloc(784 * 8); 
             
-            // 4. Copy JS pixels to C memory (Normalize 0-255 -> 0.0-1.0)
             for (let i = 0; i < 784; i++) {
-                const val = pixels[i * 4] / 255.0; // Red channel
+                const val = pixels[i * 4] / 255.0; 
                 Module.setValue(inputPtr + i * 8, val, 'double');
             }
 
-            // 5. Call C Function
             const outputPtr = Module._predict(inputPtr);
 
-            // 6. Read Results back from C
             let maxVal = -1;
             let maxIdx = 0;
             for (let i = 0; i < 10; i++) {
                 const prob = Module.getValue(outputPtr + i * 8, 'double');
-                
-                // Update UI Bars (Max height 100px)
                 const height = Math.floor(prob * 100);
                 barEls[i].style.height = height + 'px';
-                
                 if (prob > maxVal) { maxVal = prob; maxIdx = i; }
             }
 
-            // Highlight winner
             barEls.forEach(b => b.style.background = '#444');
-            barEls[maxIdx].style.background = '#4caf50'; // Green
+            barEls[maxIdx].style.background = '#4caf50'; 
             document.getElementById('prediction').innerText = `Prediction: ${maxIdx} (${(maxVal*100).toFixed(1)}%)`;
 
-            // 7. Free C memory
             Module._free(inputPtr);
         }
         
-        // Init canvas to black
         clearCanvas();
     </script>
 </body>
