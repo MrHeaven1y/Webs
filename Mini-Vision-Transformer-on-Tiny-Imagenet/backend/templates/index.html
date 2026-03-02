@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-ViT Tester</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { margin-top: 0; color: #333; }
+        .upload-area { margin-bottom: 20px; }
+        input[type="file"] { margin-bottom: 10px; }
+        img { max-width: 100%; max-height: 300px; border-radius: 8px; display: none; object-fit: cover; border: 1px solid #ddd; }
+        button { background: #007bff; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; margin-top: 10px; }
+        button:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .result-box { margin-top: 20px; padding: 15px; border-radius: 8px; background: #e9ecef; display: none; }
+        .result-box h3 { margin: 0 0 10px 0; color: #333; }
+        .feedback-section { margin-top: 30px; padding-top: 20px; border-top: 2px dashed #ddd; }
+        .input-group { display: flex; gap: 10px; margin-top: 10px; }
+        input[type="number"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🧠 Mini-ViT Model Tester</h2>
+    
+    <div class="upload-area">
+        <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
+        <img id="imagePreview" alt="Image Preview">
+    </div>
+
+    <button onclick="makePrediction()">1. Predict Image</button>
+    
+    <div id="resultBox" class="result-box">
+        <h3 id="predLabel">Prediction: ...</h3>
+        <p style="margin:0;">Class ID: <span id="predId">-</span></p>
+        <p style="margin:0;">Confidence: <strong id="predConf">-</strong>%</p>
+    </div>
+
+    <div class="feedback-section">
+        <h3>Teach the Model</h3>
+        <p style="font-size: 14px; color: #666;">If the model was wrong, enter the correct Class ID (0-199) below to send this image to the training buffer.</p>
+        
+        <div class="input-group">
+            <input type="number" id="correctLabel" placeholder="True Label ID (e.g., 42)" min="0" max="199">
+            <button class="btn-success" onclick="sendFeedback()" style="margin-top: 0; width: auto;">2. Send Feedback</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Point this to your Flask server
+    const API_URL = "http://127.0.0.1:5000";
+    let selectedFile = null;
+
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('imagePreview');
+                img.src = e.target.result;
+                img.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+            document.getElementById('resultBox').style.display = 'none';
+        }
+    }
+
+    async function makePrediction() {
+        if (!selectedFile) {
+            alert("Please select an image first!");
+            return;
+        }
+
+        const btn = document.querySelector('button');
+        btn.innerText = "Predicting...";
+
+        const formData = new FormData();
+        formData.append("image", selectedFile);
+
+        try {
+            const response = await fetch(`${API_URL}/predict`, {
+                method: "POST",
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                alert("Error: " + data.error);
+            } else {
+                document.getElementById('resultBox').style.display = 'block';
+                document.getElementById('predLabel').innerText = `Prediction: ${data.label}`;
+                document.getElementById('predId').innerText = data.class_id;
+                document.getElementById('predConf').innerText = data.confidence;
+            }
+        } catch (err) {
+            alert("Failed to connect to the API. Is Flask running?");
+            console.error(err);
+        } finally {
+            btn.innerText = "1. Predict Image";
+        }
+    }
+
+    async function sendFeedback() {
+        if (!selectedFile) {
+            alert("Please select an image first!");
+            return;
+        }
+        
+        const labelId = document.getElementById('correctLabel').value;
+        if (labelId === "") {
+            alert("Please enter a valid Class ID!");
+            return;
+        }
+
+        const btn = document.querySelector('.btn-success');
+        btn.innerText = "Sending...";
+
+        const formData = new FormData();
+        formData.append("image", selectedFile);
+        formData.append("label_id", labelId);
+
+        try {
+            const response = await fetch(`${API_URL}/feedback`, {
+                method: "POST",
+                body: formData
+            });
+            
+            const data = await response.json();
+            alert(data.status || data.error);
+            document.getElementById('correctLabel').value = ""; // clear input
+        } catch (err) {
+            alert("Error sending feedback to server.");
+            console.error(err);
+        } finally {
+            btn.innerText = "2. Send Feedback";
+        }
+    }
+</script>
+</body>
+</html>

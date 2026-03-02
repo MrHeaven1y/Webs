@@ -7,3 +7,5 @@
 *.h5 filter=lfs diff=lfs merge=lfs -text
 *.tflite filter=lfs diff=lfs merge=lfs -text
 >>>>>>> 3eec38c526c2cd8dc07a6675d94ea9304a065e80
+*.pth filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
